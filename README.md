@@ -1,6 +1,8 @@
 # esc-pos-proxy-capacitor-plugin
 
--
+![XKCD 2863](https://imgs.xkcd.com/comics/bad_timing.png)
+
+[![npm version](https://badge.fury.io/js/esc-pos-proxy-capacitor-plugin.svg)](https://badge.fury.io/js/esc-pos-proxy-capacitor-plugin)
 
 ## Install
 
