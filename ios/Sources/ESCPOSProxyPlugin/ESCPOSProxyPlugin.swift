@@ -18,13 +18,13 @@ public class ESCPOSProxyPlugin: CAPPlugin, CAPBridgedPlugin {
 
         let port = call.getInt("port") ?? 9100
 
-        guard let dataObject = call.getObject("message") else {
+        guard let jsObject = call.getObject("message") else {
             call.reject("Data object is null")
             return
         }
 
-        guard let data = extractByteArrayFromJSON(dataObject) else {
-            call.reject("Failed to read data array")
+        guard let data = convertToData(jsObject: jsObject) else {
+            call.reject("Couldn't parse message")
             return
         }
 
@@ -37,15 +37,15 @@ public class ESCPOSProxyPlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
 
-    private func extractByteArrayFromJSON(_ dataObject: JSObject) -> Data? {
-        var data = Data()
-        for key in dataObject.keys.sorted() {
-            if let value = dataObject[key] as? Int {
-                data.append(UInt8(value))
+    private func convertToData(jsObject: JSObject) -> Data? {
+        var byteArray = [UInt8]()
+        for key in jsObject.keys.sorted(by: { Int($0)! < Int($1)! }) {
+            if let value = jsObject[key] as? NSNumber {
+                byteArray.append(UInt8(truncating: value))
             } else {
                 return nil
             }
         }
-        return data
+        return Data(byteArray)
     }
 }
