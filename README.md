@@ -1,6 +1,6 @@
 # esc-pos-proxy-capacitor-plugin
 
-![XKCD 2863](https://imgs.xkcd.com/comics/bad_timing.png)
+![PRINTER-STUFF](https://github.com/nCr78/esc-pos-proxy-capacitor-plugin/blob/master/printer-stuff.png)
 
 [![npm version](https://badge.fury.io/js/esc-pos-proxy-capacitor-plugin.svg)](https://badge.fury.io/js/esc-pos-proxy-capacitor-plugin)
 
