@@ -27,11 +27,14 @@ public class ESCPOSProxyPlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("Failed to read data array")
             return
         }
-        guard let ret = implementation.print(ip, port, data) else {
-            call.reject("Failed to send ESC/POS command")
-            return
+
+        implementation.sendEscPosCommand(ip: ip, port: port, message: data) { success in
+            if success {
+                call.resolve(["status": "printed"]);
+            } else {
+                call.reject("Failed to send ESC/POS command")
+            }
         }
-        call.resolve(["status": ret])
     }
 
     private func extractByteArrayFromJSON(_ dataObject: JSObject) -> Data? {
