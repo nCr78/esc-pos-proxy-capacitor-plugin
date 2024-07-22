@@ -1,6 +1,6 @@
 {
   "name": "esc-pos-proxy-capacitor-plugin",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "-",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
