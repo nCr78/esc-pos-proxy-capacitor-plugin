@@ -13,42 +13,30 @@ public class ESCPOSProxyPlugin: CAPPlugin, CAPBridgedPlugin {
     private let implementation = ESCPOSProxy()
 
     @objc func print(_ call: CAPPluginCall) {
-        guard let ip = call.getString("ip") else {
+        guard let ip = call.getString("ip"), !ip.isEmpty else {
             call.reject("IP address is required")
             return
         }
 
         let port = call.getInt("port") ?? 9100
 
-        guard let jsObject = call.getObject("message") else {
-            call.reject("Data object is null")
+        guard let base64Message = call.getString("message") else {
+            call.reject("message is required (base64-encoded ESC/POS bytes)")
             return
         }
 
-        guard let data = convertToData(jsObject: jsObject) else {
-            call.reject("Couldn't parse message")
+        guard let data = Data(base64Encoded: base64Message) else {
+            call.reject("message is not valid base64")
             return
         }
 
         implementation.sendEscPosCommand(ip: ip, port: port, message: data) { success in
             if success {
-                call.resolve(["status": "printed"]);
+                call.resolve(["status": "printed"])
             } else {
                 call.reject("Failed to send ESC/POS command")
             }
         }
-    }
-
-    private func convertToData(jsObject: JSObject) -> Data? {
-        var byteArray = [UInt8]()
-        for key in jsObject.keys.sorted(by: { Int($0)! < Int($1)! }) {
-            if let value = jsObject[key] as? NSNumber {
-                byteArray.append(UInt8(truncating: value))
-            } else {
-                return nil
-            }
-        }
-        return Data(byteArray)
     }
 
     @objc func ping(_ call: CAPPluginCall) {

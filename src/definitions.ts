@@ -1,5 +1,13 @@
 export interface ESCPOSProxyPlugin {
-  print(options: { message: Uint8Array, ip: string, port: number }): Promise<{ status: string }>;
+  /**
+   * Send raw ESC/POS bytes to a network printer at the given IP/port.
+   *
+   * `message` must be a base64-encoded string. Callers that already hold a
+   * Uint8Array should encode it with `btoa(String.fromCharCode(...bytes))` or
+   * an equivalent helper before passing it in. Rejects with a descriptive
+   * error if the socket fails to connect or write.
+   */
+  print(options: { message: string; ip: string; port: number }): Promise<{ status: string }>;
 
   /**
    * Check whether a printer is reachable on the given IP/port.

@@ -12,11 +12,9 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,7 +31,7 @@ import android.net.nsd.NsdServiceInfo;
 import android.os.Handler;
 import android.os.Looper;
 import android.content.Context;
-import org.json.JSONException;
+import android.util.Base64;
 
 @CapacitorPlugin(name = "ESCPOSProxy")
 public class ESCPOSProxyPlugin extends Plugin {
@@ -42,61 +40,54 @@ public class ESCPOSProxyPlugin extends Plugin {
 
     @PluginMethod
     public void print(PluginCall call) {
-      try {
-        System.out.println(call);
-            String ip = call.getString("ip");
-            int port = call.getInt("port", 9100);
-            JSObject dataObject = call.getObject("message");
-            if (dataObject == null) {
-              call.reject("Data object is null");
-              return;
+        final String ip = call.getString("ip");
+        final int port = call.getInt("port", 9100);
+        final String base64Message = call.getString("message");
+
+        if (ip == null || ip.isEmpty()) {
+            call.reject("IP address is required");
+            return;
+        }
+        if (base64Message == null) {
+            call.reject("message is required (base64-encoded ESC/POS bytes)");
+            return;
+        }
+
+        final byte[] data;
+        try {
+            data = Base64.decode(base64Message, Base64.DEFAULT);
+        } catch (IllegalArgumentException e) {
+            call.reject("message is not valid base64", e);
+            return;
+        }
+
+        getBridge().execute(() -> {
+            try {
+                sendEscPosCommand(ip, port, data);
+                JSObject ret = new JSObject();
+                ret.put("status", "printed");
+                call.resolve(ret);
+            } catch (Exception e) {
+                call.reject("ESC/POS print failed: " + e.getMessage(), e);
             }
+        });
+    }
 
-            // Extract byte array from JSON object
-            byte[] data = extractByteArrayFromJSON(dataObject);
+    private void sendEscPosCommand(String ip, int port, byte[] message) throws Exception {
+        // Define the timeout values in milliseconds
+        int connectionTimeout = 5000; // 5 seconds
+        int readTimeout = 5000; // 5 seconds
 
-            sendEscPosCommand(ip, port, data);
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress(ip, port), connectionTimeout);
+            socket.setSoTimeout(readTimeout);
 
-            JSObject ret = new JSObject();
-            ret.put("status", implementation.print("printed"));
-            call.resolve(ret);
-        } catch (JSONException e) {
-            call.reject("Failed to read data array", e);
+            try (OutputStream out = socket.getOutputStream()) {
+                out.write(message);
+                out.flush();
+            }
         }
     }
-
-    private void sendEscPosCommand(String ip, int port, byte[] message) {
-      // Define the timeout values in milliseconds
-      int connectionTimeout = 5000; // 5 seconds
-      int readTimeout = 5000; // 5 seconds
-
-      try (Socket socket = new Socket()) {
-        // Set the connection timeout
-        socket.connect(new InetSocketAddress(ip, port), connectionTimeout);
-
-        // Set the read timeout
-        socket.setSoTimeout(readTimeout);
-
-        try (OutputStream out = socket.getOutputStream()) {
-          out.write(message);
-          out.flush();
-        }
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    }
-
-  private byte[] extractByteArrayFromJSON(JSObject dataObject) throws JSONException {
-    int length = dataObject.length();
-    byte[] data = new byte[length];
-    Iterator<String> keys = dataObject.keys();
-    int index = 0;
-    while (keys.hasNext()) {
-      String key = keys.next();
-      data[index++] = (byte) dataObject.getInt(key);
-    }
-    return data;
-  }
 
   @PluginMethod
   public void ping(PluginCall call) {
