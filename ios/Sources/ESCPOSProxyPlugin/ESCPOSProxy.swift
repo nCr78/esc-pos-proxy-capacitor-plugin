@@ -35,10 +35,10 @@ import Darwin
         connection.start(queue: queue)
     }
 
-    @objc public func ping(ip: String, port: Int, completion: @escaping (Bool, Double?) -> Void) {
+    @objc public func ping(ip: String, port: Int, completion: @escaping (Bool, NSNumber?) -> Void) {
         let start = DispatchTime.now()
         let connection = NWConnection(host: NWEndpoint.Host(ip), port: NWEndpoint.Port(integerLiteral: NWEndpoint.Port.IntegerLiteralType(port)), using: .tcp)
-        let queue = DispatchQueue(label: "escpos-ping-\(ip)-\(port)")
+        let queue = DispatchQueue(label: "escpos-ping-(ip)-(port)")
         var finished = false
 
         let finish: (Bool) -> Void = { success in
@@ -46,7 +46,7 @@ import Darwin
                 return
             }
             finished = true
-            let elapsed = success ? Double(DispatchTime.now().uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000.0 : nil
+            let elapsed = success ? NSNumber(value: Double(DispatchTime.now().uptimeNanoseconds - start.uptimeNanoseconds) / 1_000000.0) : nil
             completion(success, elapsed)
             connection.cancel()
         }
@@ -55,7 +55,7 @@ import Darwin
             switch state {
             case .ready:
                 finish(true)
-            case .failed(_), .cancelled:
+            case .failed(), .cancelled:
                 finish(false)
             default:
                 break
